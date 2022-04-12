@@ -50,9 +50,9 @@ int main(int argc, char *argv[]) {
     map<char, string>::iterator it = records.begin();
     for (; it != records.end(); it++) {
         switch (it->first) {
-            case 'o': setenv("FILE", to_string(open(it->second.c_str(), O_CREAT, 0664)).c_str(), 1); break;
-            case 'p': setenv("LD_PRELOAD", it->second.c_str(), 1);                                   break;
-            default :                                                                                break;
+            case 'o': setenv("FILE", to_string(open(it->second.c_str(), O_CREAT | O_RDWR, 0664)).c_str(), 1); break;
+            case 'p': setenv("LD_PRELOAD", it->second.c_str(), 1);                                            break;
+            default :                                                                                         break;
         }
     }
 

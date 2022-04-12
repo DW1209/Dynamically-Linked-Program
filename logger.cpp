@@ -64,7 +64,17 @@ extern "C" {
         old_chmod = (int(*)(const char *, mode_t)) dlsym(handle, "chmod");
         int value = old_chmod(pathname, mode); dlclose(handle);
 
-        fprintf(stderr, "[logger] chmod(\"%s\", %o) = %d\n", pathname, mode, value);
+        char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
+
+        if (output_file == NULL) {
+            if (fprintf(stderr, "[logger] chmod(\"%s\", %o) = %d\n", pathname, mode, value) < 0) {
+                perror("chmod fprintf error");
+            }
+        } else {
+            if (dprintf(file, "[logger] chmod(\"%s\", %o) = %d\n", pathname, mode, value) < 0) {
+                perror("chmod dprintf error");
+            }
+        }
 
         return value;
     }
@@ -75,7 +85,17 @@ extern "C" {
         old_chown = (int(*)(const char *, uid_t, gid_t)) dlsym(handle, "chown");
         int value = old_chown(pathname, owner, group); dlclose(handle);
 
-        fprintf(stderr, "[logger] chown(\"%s\", %d, %d) = %d\n", pathname, owner, group, value);
+        char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
+
+        if (output_file == NULL) {
+            if (fprintf(stderr, "[logger] chown(\"%s\", %d, %d) = %d\n", pathname, owner, group, value) < 0) {
+                perror("chown fprintf error");
+            }
+        } else {
+            if (dprintf(file, "[logger] chown(\"%s\", %d, %d) = %d\n", pathname, owner, group, value) < 0) {
+                perror("chown dprintf error");
+            }
+        }
 
         return value;
     }
@@ -88,7 +108,17 @@ extern "C" {
         old_close = (int(*)(int)) dlsym(handle, "close");
         int value = old_close(fd); dlclose(handle);
 
-        fprintf(stderr, "[logger] close(\"%s\") = %d\n", filename, value);
+        char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
+        
+        if (output_file == NULL) {
+            if (fprintf(stderr, "[logger] close(\"%s\") = %d\n", filename, value) < 0) {
+                perror("close fprintf error");
+            }
+        } else {
+            if (dprintf(file, "[logger] close(\"%s\") = %d\n", filename, value) < 0) {
+                perror("close dprintf error");
+            }
+        }
 
         return value;
     }
@@ -99,7 +129,17 @@ extern "C" {
         old_creat = (int(*)(const char *, mode_t)) dlsym(handle, "creat");
         int value = old_creat(pathname, mode); dlclose(handle);
 
-        fprintf(stderr, "[logger] creat(\"%s\", %o) = %d\n", pathname, mode, value);
+        char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
+
+        if (output_file == NULL) {
+            if (fprintf(stderr, "[logger] creat(\"%s\", %03o) = %d\n", pathname, mode, value) < 0) {
+                perror("creat fprintf error");
+            }
+        } else {
+            if (dprintf(file, "[logger] creat(\"%s\", %03o) = %d\n", pathname, mode, value) < 0) {
+                perror("creat dprintf error");
+            }
+        }
 
         return value;
     }
@@ -112,7 +152,17 @@ extern "C" {
         old_fclose = (int(*)(FILE *)) dlsym(handle, "fclose");
         int value = old_fclose(stream); dlclose(handle);
 
-        fprintf(stderr, "[logger] fclose(\"%s\") = %d\n", filename, value);
+        char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
+
+        if (output_file == NULL) {
+            if (fprintf(stderr, "[logger] fclose(\"%s\") = %d\n", filename, value) < 0) {
+                perror("fclose fprintf error");
+            }
+        } else {
+            if (dprintf(file, "[logger] fclose(\"%s\") = %d\n", filename, value) < 0) {
+                perror("fclose dprintf error");
+            }
+        }
 
         return value;
     }
@@ -123,7 +173,17 @@ extern "C" {
         old_fopen = (FILE*(*)(const char *, const char *)) dlsym(handle, "fopen");
         FILE *fp = old_fopen(pathname, mode); dlclose(handle);
 
-        fprintf(stderr, "[logger] fopen(\"%s\", \"%s\") = %p\n", pathname, mode, fp);
+        char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
+
+        if (output_file == NULL) {
+            if (fprintf(stderr, "[logger] fopen(\"%s\", \"%s\") = %p\n", pathname, mode, fp) < 0) {
+                perror("fopen fprintf error");
+            }
+        } else {            
+            if (dprintf(file, "[logger] fopen(\"%s\", \"%s\") = %p\n", pathname, mode, fp) < 0) {
+                perror("dprintf error");
+            }
+        }
 
         return fp;
     }
@@ -135,7 +195,17 @@ extern "C" {
         size_t value = old_fread(ptr, size, nmemb, stream); dlclose(handle);
 
         char path[PATH_MAX], filename[PATH_MAX]; get_filename(filename, path, 0, stream);
-        fprintf(stderr, "[logger] fread(\"%s\", %ld, %ld, \"%s\") = %ld\n", (char *) ptr, size, nmemb, filename, value);
+        char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
+
+        if (output_file == NULL) {
+            if (fprintf(stderr, "[logger] fread(\"%s\", %ld, %ld, \"%s\") = %ld\n", (char *) ptr, size, nmemb, filename, value) < 0) {
+                perror("fread fprintf error");
+            }
+        } else {
+            if (dprintf(file, "[logger] fread(\"%s\", %ld, %ld, \"%s\") = %ld\n", (char *) ptr, size, nmemb, filename, value) < 0) {
+                perror("fread dprintf error");
+            }
+        }
 
         return value;
     }
@@ -148,8 +218,17 @@ extern "C" {
 
         char str[128]; get_string(ptr, str, sizeof(str), value);
         char path[PATH_MAX], filename[PATH_MAX]; get_filename(filename, path, 0, stream);
+        char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
 
-        fprintf(stderr, "[logger] fwrite(\"%s\", %ld, %ld, \"%s\") = %ld\n", (const char *) ptr, size, nmemb, filename, value);
+        if (output_file == NULL) {
+            if (fprintf(stderr, "[logger] fwrite(\"%s\", %ld, %ld, \"%s\") = %ld\n", str, size, nmemb, filename, value) < 0) {
+                perror("fwrite fprintf error");
+            }
+        } else {
+            if (dprintf(file, "[logger] fwrite(\"%s\", %ld, %ld, \"%s\") = %ld\n", str, size, nmemb, filename, value) < 0) {
+                perror("fwrite dprintf error");
+            }
+        }
 
         return value;
     }
@@ -163,7 +242,17 @@ extern "C" {
         old_open = (int(*)(const char *, int, ...)) dlsym(handle, "open");
         int value = old_open(pathname, flags, mode); dlclose(handle);
 
-        fprintf(stderr, "[logger] open(\"%s\", %03d, %03o) = %d\n", pathname, flags, mode, value);
+        char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
+
+        if (output_file == NULL) {
+            if (fprintf(stderr, "[logger] open(\"%s\", %03o, %03o) = %d\n", pathname, flags, mode, value) < 0) {
+                perror("open fprintf error");
+            }
+        } else {
+            if (dprintf(file, "[logger] open(\"%s\", %03o, %03o) = %d\n", pathname, flags, mode, value) < 0) {
+                perror("open dprintf error");
+            }
+        }
 
         return value;
     }
@@ -175,7 +264,17 @@ extern "C" {
         ssize_t value = old_read(fd, buf, count); dlclose(handle);
 
         char path[PATH_MAX], filename[PATH_MAX]; get_filename(filename, path, fd, NULL);
-        fprintf(stderr, "[logger] read(\"%s\", \"%s\", %ld) = %ld\n", filename, (char *) buf, count, value);
+        char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
+
+        if (output_file == NULL) {
+            if (fprintf(stderr, "[logger] read(\"%s\", \"%s\", %ld) = %ld\n", filename, (char *) buf, count, value) < 0) {
+                perror("read fprintf error");
+            }
+        } else {
+            if (dprintf(file, "[logger] read(\"%s\", \"%s\", %ld) = %ld\n", filename, (char *) buf, count, value) < 0) {
+                perror("read dprintf error");
+            }
+        }
 
         return value;
     }
@@ -186,7 +285,17 @@ extern "C" {
         old_remove = (int(*)(const char *)) dlsym(handle, "remove");
         int value = old_remove(pathname); dlclose(handle);
 
-        fprintf(stderr, "[logger] remove(\"%s\") = %d\n", pathname, value);
+        char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
+
+        if (output_file == NULL) {
+            if (fprintf(stderr, "[logger] remove(\"%s\") = %d\n", pathname, value) < 0) {
+                perror("remove fprintf error");
+            }
+        } else {
+            if (dprintf(file, "[logger] remove(\"%s\") = %d\n", pathname, value) < 0) {
+                perror("remove dprintf error");
+            }
+        }
 
         return value;
     }
@@ -197,7 +306,17 @@ extern "C" {
         old_rename = (int(*)(const char *, const char *)) dlsym(handle, "rename");
         int value = old_rename(oldpath, newpath); dlclose(handle);
 
-        fprintf(stderr, "[logger] rename(\"%s\", \"%s\") = %d\n", oldpath, newpath, value);
+        char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
+
+        if (output_file == NULL) {
+            if (fprintf(stderr, "[logger] rename(\"%s\", \"%s\") = %d\n", oldpath, newpath, value) < 0) {
+                perror("rename fprintf error");
+            }
+        } else {
+            if (dprintf(file, "[logger] rename(\"%s\", \"%s\") = %d\n", oldpath, newpath, value) < 0) {
+                perror("rename dprintf error");
+            }
+        }
 
         return value;
     }
@@ -208,7 +327,17 @@ extern "C" {
         old_tmpfile = (FILE *(*)(void)) dlsym(handle, "tmpfile");
         FILE *fp = old_tmpfile(); dlclose(handle);
 
-        fprintf(stderr, "[logger] tmpfile() = %p\n", fp);
+        char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
+
+        if (output_file == NULL) {
+            if (fprintf(stderr, "[logger] tmpfile() = %p\n", fp) < 0) {
+                perror("tmpfile fprintf error");
+            }
+        } else {
+            if (dprintf(file, "[logger] tmpfile() = %p\n", fp) < 0) {
+                perror("tmpfile dprintf error");
+            }
+        }
 
         return fp;
     }
@@ -221,8 +350,17 @@ extern "C" {
 
         char str[128]; get_string(buf, str, sizeof(str), count);
         char path[PATH_MAX], filename[PATH_MAX]; get_filename(filename, path, fd, NULL);
+        char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
 
-        fprintf(stderr, "[logger] write(\"%s\", \"%s\", %ld) = %ld\n", filename, str, value, value);
+        if (output_file == NULL) {
+            if (fprintf(stderr, "[logger] write(\"%s\", \"%s\", %ld) = %ld\n", filename, str, value, value) < 0) {
+                perror("write fprintf error");
+            }
+        } else {
+            if (dprintf(file, "[logger] write(\"%s\", \"%s\", %ld) = %ld\n", filename, str, value, value) < 0) {
+                perror("write dprintf error");
+            }
+        }
 
         return value;
     }
