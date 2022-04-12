@@ -66,6 +66,15 @@
             }
         }
 
+// Change not printable character to a dot.
+        void get_string(const void *buf, char *str, int str_size, size_t count) {
+            memset(str, 0, str_size); strncpy(str, (const char *) buf, count);
+
+            for (size_t i = 0; i < count; i++) {
+                if (!isprint(str[i])) str[i] = '.';
+            }
+        }
+
 // Below are the monitored library calls.
         int chmod(const char *pathname, mode_t mode) {
             void *handle = dlopen("libc.so.6", RTLD_LAZY);
@@ -157,7 +166,9 @@
             old_fwrite = (size_t(*)(const void *, size_t, size_t, FILE *)) dlsym(handle, "fwrite");
             size_t value = old_fwrite(ptr, size, nmemb, stream); dlclose(handle);
 
+            char str[128]; get_string(ptr, str, sizeof(str), value);
             char path[PATH_MAX], filename[PATH_MAX]; get_filename(filename, path, 0, stream);
+
             printf("[logger] fwrite(\"%s\", %ld, %ld, \"%s\") = %ld\n", (const char *) ptr, size, nmemb, filename, value);
 
             return value;
@@ -231,8 +242,10 @@
             old_write = (ssize_t(*)(int, const void *, size_t)) dlsym(handle, "write");
             ssize_t value = old_write(fd, buf, count); dlclose(handle);
 
+            char str[128]; get_string(buf, str, sizeof(str), count);
             char path[PATH_MAX], filename[PATH_MAX]; get_filename(filename, path, fd, NULL);
-            printf("[logger] write(\"%s\", \"%s\", %ld) = %ld\n", filename, (char *) buf, count, value);
+
+            printf("[logger] write(\"%s\", \"%s\", %ld) = %ld\n", filename, str, value, value);
 
             return value;
         }
