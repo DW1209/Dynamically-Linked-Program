@@ -31,6 +31,7 @@
     static ssize_t (*old_write)(int, const void *, size_t);
 
     extern "C" {
+// According to fd or FILE to get the filename by readlink function.
         void get_filename(char *filename, char *path, int fd, FILE *stream) {
             memset(path, 0, PATH_MAX); memset(filename, 0, PATH_MAX);
 
@@ -47,6 +48,7 @@
             }
         }
 
+// Change the mode_t type to the required string.
         void change(mode_t mode, char *numbers) {
             int number = mode, binaries[10], count = 8;
 
@@ -64,6 +66,7 @@
             }
         }
 
+// Below are the monitored library calls.
         int chmod(const char *pathname, mode_t mode) {
             void *handle = dlopen("libc.so.6", RTLD_LAZY);
 
@@ -161,6 +164,7 @@
         }
 
         int open(const char *pathname, int flags, ...) {
+// Use va_arg function to check whether there is additional argument or not.
             va_list vl; va_start(vl, flags); mode_t mode = va_arg(vl, mode_t);
 
             void *handle = dlopen("libc.so.6", RTLD_LAZY);
