@@ -11,10 +11,10 @@
 using namespace std;
 
 void print_usage(void) {
-    printf("usage: ./logger [-o file] [-p sopath] [--] cmd [cmd args ...]\n");
-    printf("\t-p: set the path to logger.so, default = ./logger.so\n");
-    printf("\t-o: print output to file, print to \"stderr\" if no file specified\n");
-    printf("\t--: separate the arguments for logger and for the command\n");
+    fprintf(stderr, "usage: ./logger [-o file] [-p sopath] [--] cmd [cmd args ...]\n");
+    fprintf(stderr, "\t-p: set the path to logger.so, default = ./logger.so\n");
+    fprintf(stderr, "\t-o: print output to file, print to \"stderr\" if no file specified\n");
+    fprintf(stderr, "\t--: separate the arguments for logger and for the command\n");
 }
 
 int main(int argc, char *argv[]) {
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
             perror("fork error"); exit(-1);
         } else if (pid == 0) {
             if (execvp(commands[0], commands) < 0) {
-                printf("command not found: %s\n", commands[0]); exit(-1);
+                fprintf(stderr, "command not found: %s\n", commands[0]); exit(-1);
             }
         } else {
             waitpid(pid, NULL, 0);

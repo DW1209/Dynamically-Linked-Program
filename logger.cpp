@@ -83,7 +83,7 @@
             int value = old_chmod(pathname, mode); dlclose(handle);
 
             char numbers[SIZE]; memset(numbers, 0, sizeof(numbers)); change(mode, numbers);
-            printf("[logger] chmod(\"%s\", %s) = %d\n", pathname, numbers, value);
+            fprintf(stderr, "[logger] chmod(\"%s\", %s) = %d\n", pathname, numbers, value);
 
             return value;
         }
@@ -94,7 +94,7 @@
             old_chown = (int(*)(const char *, uid_t, gid_t)) dlsym(handle, "chown");
             int value = old_chown(pathname, owner, group); dlclose(handle);
 
-            printf("[logger] chown(\"%s\", %d, %d) = %d\n", pathname, owner, group, value);
+            fprintf(stderr, "[logger] chown(\"%s\", %d, %d) = %d\n", pathname, owner, group, value);
 
             return value;
         }
@@ -107,7 +107,7 @@
             old_close = (int(*)(int)) dlsym(handle, "close");
             int value = old_close(fd); dlclose(handle);
 
-            printf("[logger] close(\"%s\") = %d\n", filename, value);
+            fprintf(stderr, "[logger] close(\"%s\") = %d\n", filename, value);
 
             return value;
         }
@@ -119,7 +119,7 @@
             int value = old_creat(pathname, mode); dlclose(handle);
 
             char numbers[SIZE]; memset(numbers, 0, sizeof(numbers)); change(mode, numbers);
-            printf("[logger] creat(\"%s\", %s) = %d\n", pathname, numbers, value);
+            fprintf(stderr, "[logger] creat(\"%s\", %s) = %d\n", pathname, numbers, value);
 
             return value;
         }
@@ -132,7 +132,7 @@
             old_fclose = (int(*)(FILE *)) dlsym(handle, "fclose");
             int value = old_fclose(stream); dlclose(handle);
 
-            printf("[logger] fclose(\"%s\") = %d\n", filename, value);
+            fprintf(stderr, "[logger] fclose(\"%s\") = %d\n", filename, value);
 
             return value;
         }
@@ -143,7 +143,7 @@
             old_fopen = (FILE*(*)(const char *, const char *)) dlsym(handle, "fopen");
             FILE *fp = old_fopen(pathname, mode); dlclose(handle);
 
-            printf("[logger] fopen(\"%s\", \"%s\") = %p\n", pathname, mode, fp);
+            fprintf(stderr, "[logger] fopen(\"%s\", \"%s\") = %p\n", pathname, mode, fp);
 
             return fp;
         }
@@ -155,7 +155,7 @@
             size_t value = old_fread(ptr, size, nmemb, stream); dlclose(handle);
 
             char path[PATH_MAX], filename[PATH_MAX]; get_filename(filename, path, 0, stream);
-            printf("[logger] fread(\"%s\", %ld, %ld, \"%s\") = %ld\n", (char *) ptr, size, nmemb, filename, value);
+            fprintf(stderr, "[logger] fread(\"%s\", %ld, %ld, \"%s\") = %ld\n", (char *) ptr, size, nmemb, filename, value);
 
             return value;
         }
@@ -169,7 +169,7 @@
             char str[128]; get_string(ptr, str, sizeof(str), value);
             char path[PATH_MAX], filename[PATH_MAX]; get_filename(filename, path, 0, stream);
 
-            printf("[logger] fwrite(\"%s\", %ld, %ld, \"%s\") = %ld\n", (const char *) ptr, size, nmemb, filename, value);
+            fprintf(stderr, "[logger] fwrite(\"%s\", %ld, %ld, \"%s\") = %ld\n", (const char *) ptr, size, nmemb, filename, value);
 
             return value;
         }
@@ -186,7 +186,7 @@
             char num1[SIZE]; memset(num1, 0, sizeof(num1)); change(mode, num1);
             char num2[SIZE]; memset(num2, 0, sizeof(num2)); change(mode, num2);
 
-            printf("[logger] open(\"%s\", %s, %s) = %d\n", pathname, num1, num2, value);
+            fprintf(stderr, "[logger] open(\"%s\", %s, %s) = %d\n", pathname, num1, num2, value);
 
             return value;
         }
@@ -198,7 +198,7 @@
             ssize_t value = old_read(fd, buf, count); dlclose(handle);
 
             char path[PATH_MAX], filename[PATH_MAX]; get_filename(filename, path, fd, NULL);
-            printf("[logger] read(\"%s\", \"%s\", %ld) = %ld\n", filename, (char *) buf, count, value);
+            fprintf(stderr, "[logger] read(\"%s\", \"%s\", %ld) = %ld\n", filename, (char *) buf, count, value);
 
             return value;
         }
@@ -209,7 +209,7 @@
             old_remove = (int(*)(const char *)) dlsym(handle, "remove");
             int value = old_remove(pathname); dlclose(handle);
 
-            printf("[logger] remove(\"%s\") = %d\n", pathname, value);
+            fprintf(stderr, "[logger] remove(\"%s\") = %d\n", pathname, value);
 
             return value;
         }
@@ -220,7 +220,7 @@
             old_rename = (int(*)(const char *, const char *)) dlsym(handle, "rename");
             int value = old_rename(oldpath, newpath); dlclose(handle);
 
-            printf("[logger] rename(\"%s\", \"%s\") = %d\n", oldpath, newpath, value);
+            fprintf(stderr, "[logger] rename(\"%s\", \"%s\") = %d\n", oldpath, newpath, value);
 
             return value;
         }
@@ -231,7 +231,7 @@
             old_tmpfile = (FILE *(*)(void)) dlsym(handle, "tmpfile");
             FILE *fp = old_tmpfile(); dlclose(handle);
 
-            printf("[logger] tmpfile() = %p\n", fp);
+            fprintf(stderr, "[logger] tmpfile() = %p\n", fp);
 
             return fp;
         }
@@ -245,7 +245,7 @@
             char str[128]; get_string(buf, str, sizeof(str), count);
             char path[PATH_MAX], filename[PATH_MAX]; get_filename(filename, path, fd, NULL);
 
-            printf("[logger] write(\"%s\", \"%s\", %ld) = %ld\n", filename, str, value, value);
+            fprintf(stderr, "[logger] write(\"%s\", \"%s\", %ld) = %ld\n", filename, str, value, value);
 
             return value;
         }
