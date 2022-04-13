@@ -67,6 +67,8 @@ int main(int argc, char *argv[]) {
         if ((pid = fork()) < 0) {
             perror("fork error"); exit(-1);
         } else if (pid == 0) {
+            int new_fd = dup(fileno(stderr)); setenv("BACKUP", to_string(new_fd).c_str(), 1);
+
             if (execvp(commands[0], commands) < 0) {
                 fprintf(stderr, "command not found: %s\n", commands[0]); exit(-1);
             }
