@@ -11,7 +11,8 @@
 #include <limits.h>
 #include <sys/types.h>
 
-#define SIZE 4
+#define SIZE    4
+#define LIMIT   32
 
 using namespace std;
 
@@ -31,30 +32,39 @@ static FILE*   (*old_tmpfile)(void);
 static ssize_t (*old_write)(int, const void *, size_t);
 
 extern "C" {
-// According to fd or FILE to get the filename by readlink function.
-    void get_filename(char *filename, char *path, int fd, FILE *stream) {
-        memset(path, 0, PATH_MAX); memset(filename, 0, PATH_MAX);
+// According to pathname, fd or FILE to get the filename by realpath or readlink function.
+    void get_filename(char *filename, const char *pathname, int fd, FILE *stream) {
+        char path[PATH_MAX]; memset(path, 0, PATH_MAX); memset(filename, 0, PATH_MAX);
 
-        if (fd != 0) {
-            snprintf(path, PATH_MAX, "/proc/self/fd/%d", fd);
-        }
+        if (pathname != NULL) {
+            if (realpath(pathname, filename) == NULL) {
+                perror("realpath error");
+            }
+        } else {
+            if (fd != 0) {
+                snprintf(path, PATH_MAX, "/proc/self/fd/%d", fd);
+            }
 
-        if (stream != NULL) {
-            snprintf(path, PATH_MAX, "/proc/self/fd/%d", fileno(stream));
-        }
+            if (stream != NULL) {
+                snprintf(path, PATH_MAX, "/proc/self/fd/%d", fileno(stream));
+            }
 
-        if (readlink(path, filename, PATH_MAX) < 0){
-            perror("readlink error");
+            if (readlink(path, filename, PATH_MAX) < 0){
+                perror("readlink error");
+            }
         }
     }
 
-// Change not printable character to a dot.
-    void get_string(const void *buf, char *str, int str_size, size_t count) {
-        memset(str, 0, str_size); strncpy(str, (const char *) buf, count);
+// Change not printable character to a dot, and limit the string to 32.
+    void get_string(const void *buf, char *str, size_t count) {
+        size_t total = (count < LIMIT)? count: LIMIT;
+        memset(str, 0, LIMIT + 1); strncpy(str, (const char *) buf, count);
 
-        for (size_t i = 0; i < count; i++) {
+        for (size_t i = 0; i < total; i++) {
             if (!isprint(str[i])) str[i] = '.';
         }
+
+        if (total == LIMIT) str[LIMIT] = 0;
     }
 
 // Below are the monitored library calls.
@@ -64,15 +74,16 @@ extern "C" {
         old_chmod = (int(*)(const char *, mode_t)) dlsym(handle, "chmod");
         int value = old_chmod(pathname, mode); dlclose(handle);
 
+        char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
         char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
 
         if (output_file == NULL) {
-            if (fprintf(backup, "[logger] chmod(\"%s\", %o) = %d\n", pathname, mode, value) < 0) {
+            if (fprintf(backup, "[logger] chmod(\"%s\", %o) = %d\n", filename, mode, value) < 0) {
                 perror("chmod fprintf error");
             }
         } else {
-            if (dprintf(file, "[logger] chmod(\"%s\", %o) = %d\n", pathname, mode, value) < 0) {
+            if (dprintf(file, "[logger] chmod(\"%s\", %o) = %d\n", filename, mode, value) < 0) {
                 perror("chmod dprintf error");
             }
         }
@@ -86,15 +97,16 @@ extern "C" {
         old_chown = (int(*)(const char *, uid_t, gid_t)) dlsym(handle, "chown");
         int value = old_chown(pathname, owner, group); dlclose(handle);
 
+        char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
         char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
 
         if (output_file == NULL) {
-            if (fprintf(backup, "[logger] chown(\"%s\", %d, %d) = %d\n", pathname, owner, group, value) < 0) {
+            if (fprintf(backup, "[logger] chown(\"%s\", %d, %d) = %d\n", filename, owner, group, value) < 0) {
                 perror("chown fprintf error");
             }
         } else {
-            if (dprintf(file, "[logger] chown(\"%s\", %d, %d) = %d\n", pathname, owner, group, value) < 0) {
+            if (dprintf(file, "[logger] chown(\"%s\", %d, %d) = %d\n", filename, owner, group, value) < 0) {
                 perror("chown dprintf error");
             }
         }
@@ -103,7 +115,7 @@ extern "C" {
     }
 
     int close(int fd) {
-        char path[PATH_MAX], filename[PATH_MAX]; get_filename(filename, path, fd, NULL);
+        char filename[PATH_MAX]; get_filename(filename, NULL, fd, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
         char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
 
@@ -131,15 +143,16 @@ extern "C" {
         old_creat = (int(*)(const char *, mode_t)) dlsym(handle, "creat");
         int value = old_creat(pathname, mode); dlclose(handle);
 
+        char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
         char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
 
         if (output_file == NULL) {
-            if (fprintf(backup, "[logger] creat(\"%s\", %03o) = %d\n", pathname, mode, value) < 0) {
+            if (fprintf(backup, "[logger] creat(\"%s\", %03o) = %d\n", filename, mode, value) < 0) {
                 perror("creat fprintf error");
             }
         } else {
-            if (dprintf(file, "[logger] creat(\"%s\", %03o) = %d\n", pathname, mode, value) < 0) {
+            if (dprintf(file, "[logger] creat(\"%s\", %03o) = %d\n", filename, mode, value) < 0) {
                 perror("creat dprintf error");
             }
         }
@@ -148,7 +161,7 @@ extern "C" {
     }
 
     int fclose(FILE *stream) {
-        char path[PATH_MAX], filename[PATH_MAX]; get_filename(filename, path, 0, stream);
+        char filename[PATH_MAX]; get_filename(filename, NULL, 0, stream);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
         char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
 
@@ -176,15 +189,16 @@ extern "C" {
         old_fopen = (FILE*(*)(const char *, const char *)) dlsym(handle, "fopen");
         FILE *fp = old_fopen(pathname, mode); dlclose(handle);
 
+        char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
         char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
 
         if (output_file == NULL) {
-            if (fprintf(backup, "[logger] fopen(\"%s\", \"%s\") = %p\n", pathname, mode, fp) < 0) {
+            if (fprintf(backup, "[logger] fopen(\"%s\", \"%s\") = %p\n", filename, mode, fp) < 0) {
                 perror("fopen fprintf error");
             }
         } else {            
-            if (dprintf(file, "[logger] fopen(\"%s\", \"%s\") = %p\n", pathname, mode, fp) < 0) {
+            if (dprintf(file, "[logger] fopen(\"%s\", \"%s\") = %p\n", filename, mode, fp) < 0) {
                 perror("dprintf error");
             }
         }
@@ -198,16 +212,17 @@ extern "C" {
         old_fread = (size_t(*)(void *, size_t, size_t, FILE *)) dlsym(handle, "fread");
         size_t value = old_fread(ptr, size, nmemb, stream); dlclose(handle);
 
-        char path[PATH_MAX], filename[PATH_MAX]; get_filename(filename, path, 0, stream);
+        char str[LIMIT + 1]; get_string(ptr, str, value);
+        char filename[PATH_MAX]; get_filename(filename, NULL, 0, stream);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
         char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
 
         if (output_file == NULL) {
-            if (fprintf(backup, "[logger] fread(\"%s\", %ld, %ld, \"%s\") = %ld\n", (char *) ptr, size, nmemb, filename, value) < 0) {
+            if (fprintf(backup, "[logger] fread(\"%s\", %ld, %ld, \"%s\") = %ld\n", str, size, nmemb, filename, value) < 0) {
                 perror("fread fprintf error");
             }
         } else {
-            if (dprintf(file, "[logger] fread(\"%s\", %ld, %ld, \"%s\") = %ld\n", (char *) ptr, size, nmemb, filename, value) < 0) {
+            if (dprintf(file, "[logger] fread(\"%s\", %ld, %ld, \"%s\") = %ld\n", str, size, nmemb, filename, value) < 0) {
                 perror("fread dprintf error");
             }
         }
@@ -221,8 +236,8 @@ extern "C" {
         old_fwrite = (size_t(*)(const void *, size_t, size_t, FILE *)) dlsym(handle, "fwrite");
         size_t value = old_fwrite(ptr, size, nmemb, stream); dlclose(handle);
 
-        char str[128]; get_string(ptr, str, sizeof(str), value);
-        char path[PATH_MAX], filename[PATH_MAX]; get_filename(filename, path, 0, stream);
+        char str[LIMIT + 1]; get_string(ptr, str, value);
+        char filename[PATH_MAX]; get_filename(filename, NULL, 0, stream);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
         char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
 
@@ -240,23 +255,24 @@ extern "C" {
     }
 
     int open(const char *pathname, int flags, ...) {
-// Use va_arg function to check whether there is additional argument or not.
-        va_list vl; va_start(vl, flags); mode_t mode = va_arg(vl, mode_t);
+// Use va_arg function to get the additional argument.
+        va_list vl; va_start(vl, flags); mode_t mode = (flags & O_CREAT)? va_arg(vl, mode_t): 0;
 
         void *handle = dlopen("libc.so.6", RTLD_LAZY);
 
         old_open = (int(*)(const char *, int, ...)) dlsym(handle, "open");
         int value = old_open(pathname, flags, mode); dlclose(handle);
 
+        char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
         char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
 
         if (output_file == NULL) {
-            if (fprintf(backup, "[logger] open(\"%s\", %03o, %03o) = %d\n", pathname, flags, mode, value) < 0) {
+            if (fprintf(backup, "[logger] open(\"%s\", %03o, %03o) = %d\n", filename, flags, mode, value) < 0) {
                 perror("open fprintf error");
             }
         } else {
-            if (dprintf(file, "[logger] open(\"%s\", %03o, %03o) = %d\n", pathname, flags, mode, value) < 0) {
+            if (dprintf(file, "[logger] open(\"%s\", %03o, %03o) = %d\n", filename, flags, mode, value) < 0) {
                 perror("open dprintf error");
             }
         }
@@ -270,16 +286,17 @@ extern "C" {
         old_read = (ssize_t(*)(int, void *, size_t)) dlsym(handle, "read");
         ssize_t value = old_read(fd, buf, count); dlclose(handle);
 
-        char path[PATH_MAX], filename[PATH_MAX]; get_filename(filename, path, fd, NULL);
+        char str[LIMIT + 1]; get_string(buf, str, value);
+        char filename[PATH_MAX]; get_filename(filename, NULL, fd, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
         char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
 
         if (output_file == NULL) {
-            if (fprintf(backup, "[logger] read(\"%s\", \"%s\", %ld) = %ld\n", filename, (char *) buf, count, value) < 0) {
+            if (fprintf(backup, "[logger] read(\"%s\", \"%s\", %ld) = %ld\n", filename, str, count, value) < 0) {
                 perror("read fprintf error");
             }
         } else {
-            if (dprintf(file, "[logger] read(\"%s\", \"%s\", %ld) = %ld\n", filename, (char *) buf, count, value) < 0) {
+            if (dprintf(file, "[logger] read(\"%s\", \"%s\", %ld) = %ld\n", filename, str, count, value) < 0) {
                 perror("read dprintf error");
             }
         }
@@ -293,15 +310,16 @@ extern "C" {
         old_remove = (int(*)(const char *)) dlsym(handle, "remove");
         int value = old_remove(pathname); dlclose(handle);
 
+        char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
         char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
 
         if (output_file == NULL) {
-            if (fprintf(backup, "[logger] remove(\"%s\") = %d\n", pathname, value) < 0) {
+            if (fprintf(backup, "[logger] remove(\"%s\") = %d\n", filename, value) < 0) {
                 perror("remove fprintf error");
             }
         } else {
-            if (dprintf(file, "[logger] remove(\"%s\") = %d\n", pathname, value) < 0) {
+            if (dprintf(file, "[logger] remove(\"%s\") = %d\n", filename, value) < 0) {
                 perror("remove dprintf error");
             }
         }
@@ -315,15 +333,17 @@ extern "C" {
         old_rename = (int(*)(const char *, const char *)) dlsym(handle, "rename");
         int value = old_rename(oldpath, newpath); dlclose(handle);
 
+        char old_filename[PATH_MAX]; get_filename(old_filename, oldpath, 0, NULL);
+        char new_filename[PATH_MAX]; get_filename(new_filename, newpath, 0, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
         char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
 
         if (output_file == NULL) {
-            if (fprintf(backup, "[logger] rename(\"%s\", \"%s\") = %d\n", oldpath, newpath, value) < 0) {
+            if (fprintf(backup, "[logger] rename(\"%s\", \"%s\") = %d\n", old_filename, new_filename, value) < 0) {
                 perror("rename fprintf error");
             }
         } else {
-            if (dprintf(file, "[logger] rename(\"%s\", \"%s\") = %d\n", oldpath, newpath, value) < 0) {
+            if (dprintf(file, "[logger] rename(\"%s\", \"%s\") = %d\n", old_filename, new_filename, value) < 0) {
                 perror("rename dprintf error");
             }
         }
@@ -359,8 +379,8 @@ extern "C" {
         old_write = (ssize_t(*)(int, const void *, size_t)) dlsym(handle, "write");
         ssize_t value = old_write(fd, buf, count); dlclose(handle);
 
-        char str[128]; get_string(buf, str, sizeof(str), count);
-        char path[PATH_MAX], filename[PATH_MAX]; get_filename(filename, path, fd, NULL);
+        char str[LIMIT + 1]; get_string(buf, str, count);
+        char filename[PATH_MAX]; get_filename(filename, NULL, fd, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
         char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
 
