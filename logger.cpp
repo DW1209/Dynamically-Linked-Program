@@ -33,12 +33,12 @@ static ssize_t (*old_write)(int, const void *, size_t);
 
 extern "C" {
 // According to pathname, fd or FILE to get the filename by realpath or readlink function.
-    void get_filename(char *filename, const char *pathname, int fd, FILE *stream) {
+    int get_filename(char *filename, const char *pathname, int fd, FILE *stream) {
         char path[PATH_MAX]; memset(path, 0, PATH_MAX); memset(filename, 0, PATH_MAX);
 
         if (pathname != NULL) {
             if (realpath(pathname, filename) == NULL) {
-                perror("realpath error");
+                return -1;
             }
         } else {
             if (fd != 0) {
@@ -49,10 +49,12 @@ extern "C" {
                 snprintf(path, PATH_MAX, "/proc/self/fd/%d", fileno(stream));
             }
 
-            if (readlink(path, filename, PATH_MAX) < 0){
-                perror("readlink error");
+            if (readlink(path, filename, PATH_MAX) < 0) {
+                return -1;
             }
         }
+
+        return 0;
     }
 
 // Change not printable character to a dot, and limit the string to 32.
@@ -255,7 +257,7 @@ extern "C" {
     }
 
     int open(const char *pathname, int flags, ...) {
-// Use va_arg function to get the additional argument.
+// Check whether flags include O_CREAT or not and use va_arg function to get the additional argument.
         va_list vl; va_start(vl, flags); mode_t mode = (flags & O_CREAT)? va_arg(vl, mode_t): 0;
 
         void *handle = dlopen("libc.so.6", RTLD_LAZY);
@@ -305,14 +307,14 @@ extern "C" {
     }
 
     int remove(const char *pathname) {
+        char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
+        char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
+        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
+
         void *handle = dlopen("libc.so.6", RTLD_LAZY);
 
         old_remove = (int(*)(const char *)) dlsym(handle, "remove");
         int value = old_remove(pathname); dlclose(handle);
-
-        char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
-        char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
-        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
 
         if (output_file == NULL) {
             if (fprintf(backup, "[logger] remove(\"%s\") = %d\n", filename, value) < 0) {
@@ -328,15 +330,15 @@ extern "C" {
     }
 
     int rename(const char *oldpath, const char *newpath){
-        void *handle = dlopen("libc.so.6", RTLD_LAZY);
-
-        old_rename = (int(*)(const char *, const char *)) dlsym(handle, "rename");
-        int value = old_rename(oldpath, newpath); dlclose(handle);
-
         char old_filename[PATH_MAX]; get_filename(old_filename, oldpath, 0, NULL);
         char new_filename[PATH_MAX]; get_filename(new_filename, newpath, 0, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
         char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
+
+        void *handle = dlopen("libc.so.6", RTLD_LAZY);
+
+        old_rename = (int(*)(const char *, const char *)) dlsym(handle, "rename");
+        int value = old_rename(oldpath, newpath); dlclose(handle);
 
         if (output_file == NULL) {
             if (fprintf(backup, "[logger] rename(\"%s\", \"%s\") = %d\n", old_filename, new_filename, value) < 0) {
