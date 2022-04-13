@@ -19,7 +19,7 @@ $ ./logger [-o file] [-p sopath] [--] cmd [cmd args ...]
 
 ## Explanation
 * The monitored library calls are **chmod**, **chown**, **close**, **creat**, **fclose**, **fread**, **fwrite**, **open**, **read**, **remove**, **rename**, **tmpfile**, **write**.
-*  If a passed argument is a filename string, it will print the **real absolute path** of the file by using `realpath(3)`. If `realpath(3)` cannot resolve the filename string, the program will simply print out the string untouched.
+*  If a passed argument is a filename string, it will print the **real absolute path** of the file by using **`realpath(3)`**. If **`realpath(3)`** cannot resolve the filename string, the program will simply print out the string untouched.
 * If a passed argument is a descriptor or a FILE * pointer, it will print the **absolute path** of the corresponding file. The filename for a corresponding descriptor can be found in **`/proc/{pid}/fd`** directory.
 * If a passed argument is a mode or a flag, it will print out the value in octal.
 * If a passed argument is an integer, it will simply print out the value in decimal.
