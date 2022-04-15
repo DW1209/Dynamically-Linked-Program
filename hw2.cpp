@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
             waitpid(pid, NULL, 0);
         }
     } else {
-        cout << "no command given." << endl; exit(-1);
+        fprintf(stderr, "no command given.\n"); exit(-1);
     }
 
     return 0;

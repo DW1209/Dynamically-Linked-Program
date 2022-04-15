@@ -16,22 +16,22 @@
 
 using namespace std;
 
-static int     (*old_chmod)(const char *, mode_t);
-static int     (*old_chown)(const char *, uid_t, gid_t);
-static int     (*old_close)(int);
-static int     (*old_creat)(const char *, mode_t);
-static int     (*old_fclose)(FILE *);
-static FILE*   (*old_fopen)(const char *, const char *);
-static size_t  (*old_fread)(void *, size_t, size_t, FILE *);
-static size_t  (*old_fwrite)(const void *, size_t, size_t, FILE *);
-static int     (*old_open)(const char *, int, ...);
-static ssize_t (*old_read)(int, void *, size_t);
-static int     (*old_remove)(const char *);
-static int     (*old_rename)(const char *, const char *);
-static FILE*   (*old_tmpfile)(void);
-static ssize_t (*old_write)(int, const void *, size_t);
-
 extern "C" {
+    static int     (*old_chmod)(const char *, mode_t);
+    static int     (*old_chown)(const char *, uid_t, gid_t);
+    static int     (*old_close)(int);
+    static int     (*old_creat)(const char *, mode_t);
+    static int     (*old_fclose)(FILE *);
+    static FILE*   (*old_fopen)(const char *, const char *);
+    static size_t  (*old_fread)(void *, size_t, size_t, FILE *);
+    static size_t  (*old_fwrite)(const void *, size_t, size_t, FILE *);
+    static int     (*old_open)(const char *, int, ...);
+    static ssize_t (*old_read)(int, void *, size_t);
+    static int     (*old_remove)(const char *);
+    static int     (*old_rename)(const char *, const char *);
+    static FILE*   (*old_tmpfile)(void);
+    static ssize_t (*old_write)(int, const void *, size_t);
+
 // According to pathname, fd or FILE to get the filename by realpath or readlink function.
     int get_filename(char *filename, const char *pathname, int fd, FILE *stream) {
         char path[PATH_MAX]; memset(path, 0, PATH_MAX); memset(filename, 0, PATH_MAX);
@@ -60,7 +60,7 @@ extern "C" {
 // Change not printable character to a dot, and limit the string to 32.
     void get_string(const void *buf, char *str, size_t count) {
         size_t total = (count < LIMIT)? count: LIMIT;
-        memset(str, 0, LIMIT + 1); strncpy(str, (const char *) buf, count);
+        memset(str, 0, LIMIT + 1); strncpy(str, (const char *) buf, total);
 
         for (size_t i = 0; i < total; i++) {
             if (!isprint(str[i])) str[i] = '.';
@@ -78,7 +78,7 @@ extern "C" {
 
         char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
-        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
+        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "w");
 
         if (output_file == NULL) {
             if (fprintf(backup, "[logger] chmod(\"%s\", %o) = %d\n", filename, mode, value) < 0) {
@@ -101,7 +101,7 @@ extern "C" {
 
         char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
-        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
+        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "w");
 
         if (output_file == NULL) {
             if (fprintf(backup, "[logger] chown(\"%s\", %d, %d) = %d\n", filename, owner, group, value) < 0) {
@@ -119,7 +119,7 @@ extern "C" {
     int close(int fd) {
         char filename[PATH_MAX]; get_filename(filename, NULL, fd, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
-        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
+        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "w");
 
         void *handle = dlopen("libc.so.6", RTLD_LAZY);
 
@@ -147,7 +147,7 @@ extern "C" {
 
         char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
-        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
+        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "w");
 
         if (output_file == NULL) {
             if (fprintf(backup, "[logger] creat(\"%s\", %03o) = %d\n", filename, mode, value) < 0) {
@@ -165,7 +165,7 @@ extern "C" {
     int fclose(FILE *stream) {
         char filename[PATH_MAX]; get_filename(filename, NULL, 0, stream);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
-        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
+        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "w");
 
         void *handle = dlopen("libc.so.6", RTLD_LAZY);
 
@@ -193,7 +193,7 @@ extern "C" {
 
         char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
-        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
+        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "w");
 
         if (output_file == NULL) {
             if (fprintf(backup, "[logger] fopen(\"%s\", \"%s\") = %p\n", filename, mode, fp) < 0) {
@@ -201,7 +201,7 @@ extern "C" {
             }
         } else {            
             if (dprintf(file, "[logger] fopen(\"%s\", \"%s\") = %p\n", filename, mode, fp) < 0) {
-                perror("dprintf error");
+                perror("fopen dprintf error");
             }
         }
 
@@ -217,7 +217,7 @@ extern "C" {
         char str[LIMIT + 1]; get_string(ptr, str, value);
         char filename[PATH_MAX]; get_filename(filename, NULL, 0, stream);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
-        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
+        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "w");
 
         if (output_file == NULL) {
             if (fprintf(backup, "[logger] fread(\"%s\", %ld, %ld, \"%s\") = %ld\n", str, size, nmemb, filename, value) < 0) {
@@ -241,7 +241,7 @@ extern "C" {
         char str[LIMIT + 1]; get_string(ptr, str, value);
         char filename[PATH_MAX]; get_filename(filename, NULL, 0, stream);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
-        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
+        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "w");
 
         if (output_file == NULL) {
             if (fprintf(backup, "[logger] fwrite(\"%s\", %ld, %ld, \"%s\") = %ld\n", str, size, nmemb, filename, value) < 0) {
@@ -267,7 +267,7 @@ extern "C" {
 
         char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
-        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
+        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "w");
 
         if (output_file == NULL) {
             if (fprintf(backup, "[logger] open(\"%s\", %03o, %03o) = %d\n", filename, flags, mode, value) < 0) {
@@ -291,7 +291,7 @@ extern "C" {
         char str[LIMIT + 1]; get_string(buf, str, value);
         char filename[PATH_MAX]; get_filename(filename, NULL, fd, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
-        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
+        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "w");
 
         if (output_file == NULL) {
             if (fprintf(backup, "[logger] read(\"%s\", \"%s\", %ld) = %ld\n", filename, str, count, value) < 0) {
@@ -309,7 +309,7 @@ extern "C" {
     int remove(const char *pathname) {
         char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
-        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
+        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "w");
 
         void *handle = dlopen("libc.so.6", RTLD_LAZY);
 
@@ -333,7 +333,7 @@ extern "C" {
         char old_filename[PATH_MAX]; get_filename(old_filename, oldpath, 0, NULL);
         char new_filename[PATH_MAX]; get_filename(new_filename, newpath, 0, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
-        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
+        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "w");
 
         void *handle = dlopen("libc.so.6", RTLD_LAZY);
 
@@ -360,8 +360,8 @@ extern "C" {
         FILE *fp = old_tmpfile(); dlclose(handle);
 
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
-        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
-
+        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "w");
+        
         if (output_file == NULL) {
             if (fprintf(backup, "[logger] tmpfile() = %p\n", fp) < 0) {
                 perror("tmpfile fprintf error");
@@ -384,7 +384,7 @@ extern "C" {
         char str[LIMIT + 1]; get_string(buf, str, count);
         char filename[PATH_MAX]; get_filename(filename, NULL, fd, NULL);
         char *output_file = getenv("FILE"); int file = (output_file != NULL)? strtol(output_file, NULL, 10): 0;
-        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "r+");
+        char *word = getenv("BACKUP"); int number = strtol(word, NULL, 10); FILE *backup = fdopen(number, "w");
 
         if (output_file == NULL) {
             if (fprintf(backup, "[logger] write(\"%s\", \"%s\", %ld) = %ld\n", filename, str, value, value) < 0) {
