@@ -53,7 +53,7 @@ extern "C" {
                 return -1;
             }
         } else {
-            if (fd != 0) {
+            if (fd >= 0) {
                 snprintf(path, PATH_MAX, "/proc/self/fd/%d", fd);
             }
 
@@ -89,7 +89,7 @@ extern "C" {
         int value = old_chmod(pathname, mode); dlclose(handle);
 
         int file = get_FILE(); FILE *backup = get_BACKUP();
-        char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
+        char filename[PATH_MAX]; get_filename(filename, pathname, -1, NULL);
 
         if (file == -1) {
             if (fprintf(backup, "[logger] chmod(\"%s\", %o) = %d\n", filename, mode, value) < 0) {
@@ -111,7 +111,7 @@ extern "C" {
         int value = old_chown(pathname, owner, group); dlclose(handle);
 
         int file = get_FILE(); FILE *backup = get_BACKUP();
-        char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
+        char filename[PATH_MAX]; get_filename(filename, pathname, -1, NULL);
 
         if (file == -1) {
             if (fprintf(backup, "[logger] chown(\"%s\", %d, %d) = %d\n", filename, owner, group, value) < 0) {
@@ -155,7 +155,7 @@ extern "C" {
         int value = old_creat(pathname, mode); dlclose(handle);
 
         int file = get_FILE(); FILE *backup = get_BACKUP();
-        char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
+        char filename[PATH_MAX]; get_filename(filename, pathname, -1, NULL);
 
         if (file == -1) {
             if (fprintf(backup, "[logger] creat(\"%s\", %03o) = %d\n", filename, mode, value) < 0) {
@@ -172,7 +172,7 @@ extern "C" {
 
     int fclose(FILE *stream) {
         int file = get_FILE(); FILE *backup = get_BACKUP();
-        char filename[PATH_MAX]; get_filename(filename, NULL, 0, stream);
+        char filename[PATH_MAX]; get_filename(filename, NULL, -1, stream);
 
         void *handle = dlopen("libc.so.6", RTLD_LAZY);
 
@@ -199,7 +199,7 @@ extern "C" {
         FILE *fp = old_fopen(pathname, mode); dlclose(handle);
 
         int file = get_FILE(); FILE *backup = get_BACKUP();
-        char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
+        char filename[PATH_MAX]; get_filename(filename, pathname, -1, NULL);
 
         if (file == -1) {
             if (fprintf(backup, "[logger] fopen(\"%s\", \"%s\") = %p\n", filename, mode, fp) < 0) {
@@ -222,7 +222,7 @@ extern "C" {
 
         int file = get_FILE(); FILE *backup = get_BACKUP();
         char str[LIMIT + 1]; get_string(ptr, str, value);
-        char filename[PATH_MAX]; get_filename(filename, NULL, 0, stream);
+        char filename[PATH_MAX]; get_filename(filename, NULL, -1, stream);
 
         if (file == -1) {
             if (fprintf(backup, "[logger] fread(\"%s\", %ld, %ld, \"%s\") = %ld\n", str, size, nmemb, filename, value) < 0) {
@@ -245,7 +245,7 @@ extern "C" {
 
         int file = get_FILE(); FILE *backup = get_BACKUP();
         char str[LIMIT + 1]; get_string(ptr, str, value);
-        char filename[PATH_MAX]; get_filename(filename, NULL, 0, stream);
+        char filename[PATH_MAX]; get_filename(filename, NULL, -1, stream);
 
         if (file == -1) {
             if (fprintf(backup, "[logger] fwrite(\"%s\", %ld, %ld, \"%s\") = %ld\n", str, size, nmemb, filename, value) < 0) {
@@ -270,7 +270,7 @@ extern "C" {
         int value = old_open(pathname, flags, mode); dlclose(handle);
 
         int file = get_FILE(); FILE *backup = get_BACKUP();
-        char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
+        char filename[PATH_MAX]; get_filename(filename, pathname, -1, NULL);
 
         if (file == -1) {
             if (fprintf(backup, "[logger] open(\"%s\", %03o, %03o) = %d\n", filename, flags, mode, value) < 0) {
@@ -310,7 +310,7 @@ extern "C" {
 
     int remove(const char *pathname) {
         int file = get_FILE(); FILE *backup = get_BACKUP();
-        char filename[PATH_MAX]; get_filename(filename, pathname, 0, NULL);
+        char filename[PATH_MAX]; get_filename(filename, pathname, -1, NULL);
 
         void *handle = dlopen("libc.so.6", RTLD_LAZY);
 
@@ -332,8 +332,8 @@ extern "C" {
 
     int rename(const char *oldpath, const char *newpath){
         int file = get_FILE(); FILE *backup = get_BACKUP();
-        char old_filename[PATH_MAX]; get_filename(old_filename, oldpath, 0, NULL);
-        char new_filename[PATH_MAX]; get_filename(new_filename, newpath, 0, NULL);
+        char old_filename[PATH_MAX]; get_filename(old_filename, oldpath, -1, NULL);
+        char new_filename[PATH_MAX]; get_filename(new_filename, newpath, -1, NULL);
 
         void *handle = dlopen("libc.so.6", RTLD_LAZY);
 
