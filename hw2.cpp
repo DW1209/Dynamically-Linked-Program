@@ -6,7 +6,6 @@
 #include <sys/types.h>
 #include <bits/stdc++.h>
 
-#define MAX     128
 #define MODE    0644
 #define FLAGS   O_CREAT | O_RDWR | O_TRUNC
 
@@ -20,13 +19,7 @@ void print_usage(void) {
 }
 
 int main(int argc, char *argv[]) {
-    int opt; pid_t pid; bool mark = false, error = false;
-
-// Allocate memories for commands variable.
-    char **commands = (char**) malloc(MAX * sizeof(char*));
-    for (int i = 0; i < MAX; i++) {
-        commands[i] = (char*) malloc(MAX * sizeof(char));
-    }
+    int opt; pid_t pid; bool error = false;
 
 // Set LD_PRELOAD = ./logger.so file.
     setenv("LD_PRELOAD", "./logger.so", 1);  
@@ -40,25 +33,20 @@ int main(int argc, char *argv[]) {
         }
     }
 
+// Print out usage if there is invalid argument option.
     if (error) {
         print_usage(); exit(-1);
     }
 
-// Get command and store them inside the commands variable.
-    for (int index = optind, i = 0; index < argc; index++, i++) {
-        commands[i] = argv[index]; mark = true;
-        if (index == argc - 1) commands[i + 1] = NULL;
-    }
-
 // Do fork and exec if there is command given.
-    if (mark) {
+    if (optind < argc) {
         if ((pid = fork()) < 0) {
             perror("fork error"); exit(-1);
         } else if (pid == 0) {
             int new_fd = dup(fileno(stderr)); setenv("BACKUP", to_string(new_fd).c_str(), 1);
 
-            if (execvp(commands[0], commands) < 0) {
-                fprintf(stdout, "command not found: %s\n", commands[0]); exit(-1);
+            if (execvp(argv[optind], argv + optind) < 0) {
+                fprintf(stdout, "command not found: %s\n", argv[optind]); exit(-1);
             }
 
             exit(-1);
