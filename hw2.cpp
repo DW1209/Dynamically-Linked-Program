@@ -13,10 +13,10 @@
 using namespace std;
 
 void print_usage(void) {
-    fprintf(stderr, "usage: ./logger [-o file] [-p sopath] [--] cmd [cmd args ...]\n");
-    fprintf(stderr, "\t-p: set the path to logger.so, default = ./logger.so\n");
-    fprintf(stderr, "\t-o: print output to file, print to \"stderr\" if no file specified\n");
-    fprintf(stderr, "\t--: separate the arguments for logger and for the command\n");
+    fprintf(stdout, "usage: ./logger [-o file] [-p sopath] [--] cmd [cmd args ...]\n");
+    fprintf(stdout, "       -p: set the path to logger.so, default = ./logger.so\n");
+    fprintf(stdout, "       -o: print output to file, print to \"stderr\" if no file specified\n");
+    fprintf(stdout, "       --: separate the arguments for logger and for the command\n");
 }
 
 int main(int argc, char *argv[]) {
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
             waitpid(pid, NULL, 0);
         }
     } else {
-        fprintf(stderr, "no command given.\n"); exit(-1);
+        fprintf(stdout, "no command given.\n"); exit(-1);
     }
 
     return 0;
