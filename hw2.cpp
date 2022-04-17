@@ -20,8 +20,7 @@ void print_usage(void) {
 }
 
 int main(int argc, char *argv[]) {
-    bool mark = false, error = false;
-    int opt; pid_t pid; map<char, string> records; 
+    int opt; pid_t pid; bool mark = false, error = false;
 
 // Allocate memories for commands variable.
     char **commands = (char**) malloc(MAX * sizeof(char*));
@@ -32,27 +31,17 @@ int main(int argc, char *argv[]) {
 // Set LD_PRELOAD = ./logger.so file.
     setenv("LD_PRELOAD", "./logger.so", 1);  
 
-// Use getopt function to get option commands.
+// Use getopt function to get option commands and set up.
     while ((opt = getopt(argc, argv, "o:p:")) != -1) {
         switch (opt) {
-            case 'o': records['o'] = string(optarg); break;
-            case 'p': records['p'] = string(optarg); break;
-            default : error = true;                  break;
+            case 'o': setenv("FILE", to_string(open(optarg, FLAGS, MODE)).c_str(), 1);  break;
+            case 'p': setenv("LD_PRELOAD", optarg, 1);                                  break;
+            default : error = true;                                                     break;
         }
     }
 
     if (error) {
         print_usage(); exit(-1);
-    }
-
-// Check if there are -o and -p argument needed to be set.
-    map<char, string>::iterator it = records.begin();
-    for (; it != records.end(); it++) {
-        switch (it->first) {
-            case 'o': setenv("FILE", to_string(open(it->second.c_str(), FLAGS, MODE)).c_str(), 1); break;
-            case 'p': setenv("LD_PRELOAD", it->second.c_str(), 1);                                 break;
-            default :                                                                              break;
-        }
     }
 
 // Get command and store them inside the commands variable.
