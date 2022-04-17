@@ -6,7 +6,9 @@
 #include <sys/types.h>
 #include <bits/stdc++.h>
 
-#define MAX 128
+#define MAX     128
+#define MODE    0644
+#define FLAGS   O_CREAT | O_RDWR | O_TRUNC
 
 using namespace std;
 
@@ -50,9 +52,9 @@ int main(int argc, char *argv[]) {
     map<char, string>::iterator it = records.begin();
     for (; it != records.end(); it++) {
         switch (it->first) {
-            case 'o': setenv("FILE", to_string(open(it->second.c_str(), O_CREAT | O_RDWR, 0664)).c_str(), 1); break;
-            case 'p': setenv("LD_PRELOAD", it->second.c_str(), 1);                                            break;
-            default :                                                                                         break;
+            case 'o': setenv("FILE", to_string(open(it->second.c_str(), FLAGS, MODE)).c_str(), 1); break;
+            case 'p': setenv("LD_PRELOAD", it->second.c_str(), 1);                                 break;
+            default :                                                                              break;
         }
     }
 
@@ -73,7 +75,7 @@ int main(int argc, char *argv[]) {
                 fprintf(stdout, "command not found: %s\n", commands[0]); exit(-1);
             }
 
-            exit(0);
+            exit(-1);
         } else {
             waitpid(pid, NULL, 0);
         }
