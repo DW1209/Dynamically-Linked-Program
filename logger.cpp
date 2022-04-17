@@ -32,11 +32,13 @@ extern "C" {
     static FILE*   (*old_tmpfile)(void);
     static ssize_t (*old_write)(int, const void *, size_t);
 
+// Get FILE environment variable and change to file descriptor number.
     int get_FILE() {
         char *output_file = getenv("FILE"); 
         return (output_file != NULL)? strtol(output_file, NULL, 10): -1;
     }
 
+// Get BACKUP environment variable and open the file.
     FILE* get_BACKUP() {
         char *word = getenv("BACKUP");
         return fdopen(strtol(word, NULL, 10), "w");
