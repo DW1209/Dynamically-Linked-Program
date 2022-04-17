@@ -20,8 +20,8 @@ void print_usage(void) {
 }
 
 int main(int argc, char *argv[]) {
+    bool mark = false, error = false;
     int opt; pid_t pid; map<char, string> records; 
-    bool mark = false, error = false, leave = false;
 
 // Allocate memories for commands variable.
     char **commands = (char**) malloc(MAX * sizeof(char*));
@@ -33,15 +33,12 @@ int main(int argc, char *argv[]) {
     setenv("LD_PRELOAD", "./logger.so", 1);  
 
 // Use getopt function to get option commands.
-    while ((opt = getopt(argc, argv, "o:p:-")) != -1) {
+    while ((opt = getopt(argc, argv, "o:p:")) != -1) {
         switch (opt) {
             case 'o': records['o'] = string(optarg); break;
             case 'p': records['p'] = string(optarg); break;
-            case '-': leave = true;                  break;
             default : error = true;                  break;
         }
-
-        if (leave) break;
     }
 
     if (error) {
